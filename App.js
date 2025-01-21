@@ -1,20 +1,37 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import {createStaticNavigation} from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+import HomeScreen from './screens/HomeScreen';
+import RegistrarEntrenoScreen from './screens/Registros/RegistrarEntrenoScreen';
+import EntrenoActivoScreen from './screens/Registros/EntrenoActivoScreen';
+import EntrenosScreen from './screens/Entrenos/EntrenosScreen';
+import AddEntrenoScreen from './screens/Entrenos/AddEntrenoScreen';
+import EjerciciosScreen from './screens/EjerciciosScreen';
+import TestScreen from './screens/Test';
+import { setupDatabase } from './database/database';
+// Añadir una clave para cada screen asociada a 
+// un objeto importado desde la carpeta ./screens/
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+const RootStack = createNativeStackNavigator({
+  screens: {
+    Home: HomeScreen,
+    Entrenos: EntrenosScreen,
+    AñadirEntreno: AddEntrenoScreen,
+    Ejercicios: EjerciciosScreen,
+    Registro: RegistrarEntrenoScreen,
+    EntrenoActivo: EntrenoActivoScreen,
+    Test: TestScreen
   },
 });
+
+// Crea el objeto para navegación, estático
+const Navigation = createStaticNavigation(RootStack);
+console.log("Debuggin")
+export default function App() {
+  useEffect(() => {
+    // Llamamos a setupDatabase cuando la app se inicializa
+    setupDatabase();
+  }, []);
+  return <Navigation />;
+}
