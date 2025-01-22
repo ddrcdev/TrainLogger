@@ -1,86 +1,93 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, ScrollView, FlatList, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useFocusEffect } from 'react';
+import { View, Text, TextInput, Button, ScrollView, FlatList, StyleSheet, Alert, TouchableOpacity, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function EntrenoActivoScreen({ route }) {
   const navigation = useNavigation();
   const ejerciciosEntreno = route?.params?.ejerciciosEntreno || [];
   const [ejerciciosState, setEjerciciosState] = useState(ejerciciosEntreno);
-  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [selectedExerciseId, setSelectedExerciseId] = useState(null);
 
+  // Inicializar registros en función de las series
   useEffect(() => {
-    if (selectedExercise?.series && typeof selectedExercise.series === 'number') {
-      // Si `series` es un número, crear un array con ese número de objetos
-      const seriesArray = Array.from({ length: selectedExercise.series }, () => ({
-        repeticiones: '',
-        peso: '',
-      }));
-      setSelectedExercise((prevState) => ({
-        ...prevState,
-        series: seriesArray,
-        completado: false, // Inicialmente no completado
-      }));
-    }
-  }, [selectedExercise]);
+    const initializedEjercicios = ejerciciosState.map((exercise) => ({
+      ...exercise,
+      registros: exercise.registros || Array.from({ length: exercise.series }, () => ({ peso: '', repeticiones: '' })),
+    }));
+    setEjerciciosState(initializedEjercicios);
+  }, []);
 
   const handleChangeSerie = (idEjercicio, index, field, value) => {
-    if (!Array.isArray(selectedExercise.series)) return;
-
-    const updatedSeries = selectedExercise.series.map((serie, serieIndex) => {
-      if (serieIndex === index) {
-        return {
-          ...serie,
-          [field]: value,
-        };
-      }
-      return serie;
-    });
-
-    const isCompleted = updatedSeries.every(
-      (serie) => serie.peso !== '' && serie.repeticiones !== ''
-    );
-
-    // Actualizar `selectedExercise` y sincronizar con `ejerciciosState`
-    const updatedExercise = {
-      ...selectedExercise,
-      series: updatedSeries,
-      completado: isCompleted,
-    };
-
-    setSelectedExercise(updatedExercise);
-
-    // Guardar los cambios en el array `ejerciciosState`
     setEjerciciosState((prevState) =>
-      prevState.map((exercise) =>
-        exercise.id_ejercicio === idEjercicio ? updatedExercise : exercise
-      )
+      prevState.map((exercise) => {
+        if (exercise.id_ejercicio === idEjercicio) {
+          const updatedRegistros = exercise.registros.map((registro, registroIndex) => {
+            if (registroIndex === index) {
+              return {
+                ...registro,
+                [field]: value,
+              };
+            }
+            return registro;
+          });
+
+          const isCompleted = updatedRegistros.every(
+            (registro) => registro.peso !== '' && registro.repeticiones !== ''
+          );
+
+          return {
+            ...exercise,
+            registros: updatedRegistros,
+            completado: isCompleted,
+          };
+        }
+        return exercise;
+      })
     );
   };
 
   const handleSaveExercise = () => {
-    if (!selectedExercise?.completado) {
+    // Función interna para comprobar si todos los ejercicios están completados
+    const areAllExercisesCompleted = ejerciciosState.every((exercise) => exercise.completado);
+
+    if (!areAllExercisesCompleted) {
       Alert.alert(
-        'Espera suh primo',
-        'Por favor, completa todos los campos antes de continuar.'
+        'Faltan datos',
+        'Por favor, asegúrate de completar todos los ejercicios antes de guardar.'
       );
       return;
     }
-    Alert.alert('Guardado', 'Ejercicio guardado con éxito.');
+
+    // TODO: Llamar a la función de base de datos para guardar los datos
+    // Aquí deberías importar y llamar a la función correspondiente de `database/database.js`
+    console.log('Guardando datos en la base de datos:', ejerciciosState);
+
+    Alert.alert('Éxito', 'Entrenamiento guardado en la base de datos.');
+    navigation.goBack(); // Navegar fuera de la pantalla tras guardar
   };
 
-  const handleSelectExercise = (exercise) => {
-    // Guardar cambios del ejercicio anterior
-    if (selectedExercise) {
-      setEjerciciosState((prevState) =>
-        prevState.map((ex) =>
-          ex.id_ejercicio === selectedExercise.id_ejercicio
-            ? selectedExercise
-            : ex
-        )
+  const handleSelectExercise = (idEjercicio) => {
+    setSelectedExerciseId(idEjercicio);
+  };
+
+  const handleBackPress = () => {
+    const hasUnsavedData = ejerciciosState.some((exercise) =>
+      exercise.registros.some((registro) => registro.peso !== '' || registro.repeticiones !== '')
+    );
+
+    if (hasUnsavedData) {
+      Alert.alert(
+        'Salir sin guardar',
+        'Tienes datos sin guardar. ¿Estás seguro de que quieres salir?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Salir', style: 'destructive', onPress: () => navigation.goBack() },
+        ]
       );
+      return true; // Prevenir que la acción por defecto cierre la pantalla
     }
-    // Seleccionar el nuevo ejercicio
-    setSelectedExercise(exercise.series ? exercise : { ...exercise, series: [] });
+
+    return false; // Permitir salir si no hay datos sin guardar
   };
 
   return (
@@ -90,9 +97,11 @@ export default function EntrenoActivoScreen({ route }) {
           data={ejerciciosState}
           keyExtractor={(item) => item.id_ejercicio.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleSelectExercise(item)}>
+            <TouchableOpacity onPress={() => handleSelectExercise(item.id_ejercicio)}>
               <View style={styles.exerciseItem}>
-                <Text style={styles.exerciseName}>{item.nombre_ejercicio}</Text>
+                <Text style={styles.exerciseName}>
+                  {item.nombre_ejercicio} ({item.series}x{item.repeticiones})
+                </Text>
                 <Text style={styles.statusIcon}>
                   {item.completado ? '✅' : '❌'}
                 </Text>
@@ -102,47 +111,51 @@ export default function EntrenoActivoScreen({ route }) {
         />
       </View>
       <View style={styles.bottomContainer}>
-        {selectedExercise && (
+        {selectedExerciseId && (
           <View style={styles.exerciseDetail}>
             <Text style={styles.detailTitle}>
-              Ejercicio: {selectedExercise?.nombre_ejercicio || 'No seleccionado'}
+              Ejercicio:{' '}
+              {
+                ejerciciosState.find(
+                  (exercise) => exercise.id_ejercicio === selectedExerciseId
+                )?.nombre_ejercicio
+              }
             </Text>
 
             <ScrollView style={styles.seriesScroll}>
-              {Array.isArray(selectedExercise.series) &&
-                selectedExercise.series.map((serie, index) => (
+              {(() => {
+                const selectedExercise = ejerciciosState.find(
+                  (exercise) => exercise.id_ejercicio === selectedExerciseId
+                );
+
+                if (!selectedExercise) {
+                  return <Text>Ejercicio no encontrado o no seleccionado.</Text>;
+                }
+
+                return selectedExercise.registros.map((registro, index) => (
                   <View key={index} style={styles.serieContainer}>
                     <Text>Serie {index + 1}</Text>
                     <TextInput
                       style={styles.input}
                       placeholder="Repeticiones"
                       keyboardType="numeric"
-                      value={serie.repeticiones}
+                      value={registro.repeticiones}
                       onChangeText={(value) =>
-                        handleChangeSerie(
-                          selectedExercise.id_ejercicio,
-                          index,
-                          'repeticiones',
-                          value
-                        )
+                        handleChangeSerie(selectedExercise.id_ejercicio, index, 'repeticiones', value)
                       }
                     />
                     <TextInput
                       style={styles.input}
                       placeholder="Peso"
                       keyboardType="numeric"
-                      value={serie.peso}
+                      value={registro.peso}
                       onChangeText={(value) =>
-                        handleChangeSerie(
-                          selectedExercise.id_ejercicio,
-                          index,
-                          'peso',
-                          value
-                        )
+                        handleChangeSerie(selectedExercise.id_ejercicio, index, 'peso', value)
                       }
                     />
                   </View>
-                ))}
+                ));
+              })()}
             </ScrollView>
           </View>
         )}
