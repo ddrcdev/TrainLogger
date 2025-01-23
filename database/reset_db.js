@@ -45,7 +45,7 @@ export const resetDatabase = async () => {
     // Función para generar entrenos aleatorios
     const generarEntrenoAleatorio = async () => {
       const randomEjercicios = [];
-      const numEjercicios = 4; // Generamos 3 ejercicios por entreno
+      const numEjercicios = 1; // Generamos 3 ejercicios por entreno
 
       // Seleccionamos ejercicios aleatorios
       while (randomEjercicios.length < numEjercicios) {
@@ -65,8 +65,8 @@ export const resetDatabase = async () => {
           nombre_entreno: nombre_entreno,
           id_ejercicio: ejercicio.id_ejercicio,
           nombre_ejercicio: ejercicio.nombre_ejercicio,
-          series: Math.floor(Math.random() * 4) + 3, // Entre 3 y 6 series
-          repeticiones: Math.floor(Math.random() * 8) + 6, // Entre 6 y 12 repeticiones
+          series: Math.floor(Math.random() * 2) + 2, // Entre 3 y 6 series
+          repeticiones: Math.floor(Math.random() * 4) + 3, // Entre 6 y 12 repeticiones
         });
       }
 
@@ -75,11 +75,8 @@ export const resetDatabase = async () => {
 
       // Obtener el id del entreno agregado
       const entrenos = await getEntrenosData(nombre_entreno); // Obtener el ultimo entreno_id
-      console.log(entrenos)
       const id_entreno = entrenos[0].id_entreno;
-
-      console.log(id_entreno)
-
+      
       // Agregar registros aleatorios a la tabla "registros"
       for (const ejercicio of entreno) {
         const fecha = new Date().toISOString(); // Fecha actual en formato ISO

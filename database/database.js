@@ -131,7 +131,7 @@ export const getEntrenos = async () => {
   const db = await openDatabase();
 
   try {
-    const entrenosUnicos = await db.getAllAsync('SELECT DISTINCT nombre_entreno FROM entrenos');
+    const entrenosUnicos = await db.getAllAsync('SELECT DISTINCT id_entreno, nombre_entreno FROM entrenos');
     if (entrenosUnicos && Array.isArray(entrenosUnicos)) {
       return entrenosUnicos;
     } else {
@@ -242,7 +242,33 @@ export const getRegistrosByNombre = async (nombre_entreno) => {
   }
 };
 
-
+// Función para guardar registros en la tabla registros
+export const addRegistros = async (entreno) => {
+  console.log("AddRegistros db");
+  console.log(entreno);
+  const db = await openDatabase();
+  try {
+    // Obtener la fecha actual
+    const fecha = new Date().toISOString(); // Ejemplo: "2025-01-22T14:30:00.000Z"
+    for (const ejercicio of entreno) {
+      console.log(ejercicio)
+      for (const serie of ejercicio.registros) {
+        console.log(serie)
+        await db.runAsync(
+          `
+          INSERT INTO registros (id_entreno, id_ejercicio, fecha, peso, repeticiones)
+          VALUES (? ,?, ?, ?, ?);
+          `,
+          [ejercicio.id_entreno, ejercicio.id_ejercicio, fecha, serie.peso, serie.repeticiones]
+        );
+      }
+    };
+    console.log("Todos los registros se han insertado correctamente.");
+  } catch (error) {
+    console.error('Error al intentar registrar en la base de datos:', error);
+    throw error;
+  }
+};
 
 
 

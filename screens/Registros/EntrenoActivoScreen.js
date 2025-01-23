@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useFocusEffect } from 'react';
 import { View, Text, TextInput, Button, ScrollView, FlatList, StyleSheet, Alert, TouchableOpacity, BackHandler } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import {addRegistros} from '../../database/database';
 
 export default function EntrenoActivoScreen({ route }) {
   const navigation = useNavigation();
@@ -46,7 +47,11 @@ export default function EntrenoActivoScreen({ route }) {
     );
   };
 
-  const handleSaveExercise = () => {
+  const handleSelectExercise = (idEjercicio) => {
+    setSelectedExerciseId(idEjercicio);
+  };
+
+  const handleSaveExercise = async () => {
     // Función interna para comprobar si todos los ejercicios están completados
     const areAllExercisesCompleted = ejerciciosState.every((exercise) => exercise.completado);
 
@@ -58,37 +63,15 @@ export default function EntrenoActivoScreen({ route }) {
       return;
     }
 
-    // TODO: Llamar a la función de base de datos para guardar los datos
-    // Aquí deberías importar y llamar a la función correspondiente de `database/database.js`
+    // Llamar a la función de base de datos para guardar los datos
+    await addRegistros(ejerciciosState);
     console.log('Guardando datos en la base de datos:', ejerciciosState);
 
     Alert.alert('Éxito', 'Entrenamiento guardado en la base de datos.');
     navigation.goBack(); // Navegar fuera de la pantalla tras guardar
   };
 
-  const handleSelectExercise = (idEjercicio) => {
-    setSelectedExerciseId(idEjercicio);
-  };
 
-  const handleBackPress = () => {
-    const hasUnsavedData = ejerciciosState.some((exercise) =>
-      exercise.registros.some((registro) => registro.peso !== '' || registro.repeticiones !== '')
-    );
-
-    if (hasUnsavedData) {
-      Alert.alert(
-        'Salir sin guardar',
-        'Tienes datos sin guardar. ¿Estás seguro de que quieres salir?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Salir', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
-      );
-      return true; // Prevenir que la acción por defecto cierre la pantalla
-    }
-
-    return false; // Permitir salir si no hay datos sin guardar
-  };
 
   return (
     <View style={styles.container}>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
 import {Picker} from '@react-native-picker/picker'
-import { getEntrenos, getRegistrosByNombre, getEntrenosData } from '../../database/database'; // Asumiendo que estas funciones ya existen en tu base de datos
+import { getEntrenos, getRegistrosByNombre, getEntrenosData, getEjercicios } from '../../database/database'; // Asumiendo que estas funciones ya existen en tu base de datos
 import {useNavigation} from '@react-navigation/native';
 
 export default function RegistrarEntrenoScreen({}) {
@@ -26,7 +26,21 @@ export default function RegistrarEntrenoScreen({}) {
     const fetchRegistros = async () => {
       if (selectedEntreno) {
         const registrosData = await getRegistrosByNombre(selectedEntreno);
-        setRegistros(registrosData);
+        const ejercicios = await getEjercicios(); 
+        console.log("Ejerc",ejercicios)
+
+        // Añadir el nombre_ejercicio a cada registro iterando en ejercicios
+        const registrosUpdated = registrosData.map((registro) => {
+          // Buscar el ejercicio correspondiente en el array de ejercicios
+          const ejercicioEncontrado = ejercicios.find(ejercicio => ejercicio.id_ejercicio === registro.id_ejercicio);
+          
+          // Si encontramos el ejercicio, obtenemos su nombre, si no, asignamos 'Desconocido'
+          const nombreEjercicio = ejercicioEncontrado ? ejercicioEncontrado.nombre_ejercicio : 'Desconocido';
+
+          return { ...registro, nombre_ejercicio: nombreEjercicio };
+        });
+
+        setRegistros(registrosUpdated);
       }
     };
     fetchRegistros();
@@ -92,10 +106,10 @@ export default function RegistrarEntrenoScreen({}) {
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text>
-              Día: {formatFecha(item.fecha).dia}
+              {formatFecha(item.fecha).dia} ({formatFecha(item.fecha).hora})
             </Text>
             <Text>
-              Hora: {formatFecha(item.fecha).hora}
+              {item.nombre_ejercicio}: {item.peso} kg // {item.repeticiones} reps 
             </Text>
           </View>
         )}

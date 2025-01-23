@@ -3,7 +3,7 @@ import {createStaticNavigation} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from './screens/HomeScreen';
-import RegistrarEntrenoScreen from './screens/Registros/RegistrarEntrenoScreen';
+import RegistrarEntrenoScreen from './screens/Registros/HomeEntrenoScreen';
 import EntrenoActivoScreen from './screens/Registros/EntrenoActivoScreen';
 import EntrenosScreen from './screens/Entrenos/EntrenosScreen';
 import AddEntrenoScreen from './screens/Entrenos/AddEntrenoScreen';
