@@ -1,7 +1,18 @@
-import React, { useState, useEffect, useFocusEffect } from 'react';
-import { View, Text, TextInput, Button, ScrollView, FlatList, StyleSheet, Alert, TouchableOpacity, BackHandler } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import {addRegistros} from '../../database/database';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  ScrollView,
+  FlatList,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  BackHandler,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { addRegistros } from "../../database/database";
 
 export default function EntrenoActivoScreen({ route }) {
   const navigation = useNavigation();
@@ -13,7 +24,12 @@ export default function EntrenoActivoScreen({ route }) {
   useEffect(() => {
     const initializedEjercicios = ejerciciosState.map((exercise) => ({
       ...exercise,
-      registros: exercise.registros || Array.from({ length: exercise.series }, () => ({ peso: '', repeticiones: '' })),
+      registros:
+        exercise.registros ||
+        Array.from({ length: exercise.series }, () => ({
+          peso: "",
+          repeticiones: "",
+        })),
     }));
     setEjerciciosState(initializedEjercicios);
   }, []);
@@ -22,18 +38,20 @@ export default function EntrenoActivoScreen({ route }) {
     setEjerciciosState((prevState) =>
       prevState.map((exercise) => {
         if (exercise.id_ejercicio === idEjercicio) {
-          const updatedRegistros = exercise.registros.map((registro, registroIndex) => {
-            if (registroIndex === index) {
-              return {
-                ...registro,
-                [field]: value,
-              };
+          const updatedRegistros = exercise.registros.map(
+            (registro, registroIndex) => {
+              if (registroIndex === index) {
+                return {
+                  ...registro,
+                  [field]: value,
+                };
+              }
+              return registro;
             }
-            return registro;
-          });
+          );
 
           const isCompleted = updatedRegistros.every(
-            (registro) => registro.peso !== '' && registro.repeticiones !== ''
+            (registro) => registro.peso !== "" && registro.repeticiones !== ""
           );
 
           return {
@@ -53,25 +71,34 @@ export default function EntrenoActivoScreen({ route }) {
 
   const handleSaveExercise = async () => {
     // Función interna para comprobar si todos los ejercicios están completados
-    const areAllExercisesCompleted = ejerciciosState.every((exercise) => exercise.completado);
-
+    const areAllExercisesCompleted = ejerciciosState.every(
+      (exercise) => exercise.completado
+    );
+    console.log(ejerciciosState);
     if (!areAllExercisesCompleted) {
       Alert.alert(
-        'Faltan datos',
-        'Por favor, asegúrate de completar todos los ejercicios antes de guardar.'
+        "Faltan datos",
+        "Por favor, asegúrate de completar todos los ejercicios antes de guardar."
       );
       return;
     }
 
     // Llamar a la función de base de datos para guardar los datos
     await addRegistros(ejerciciosState);
-    console.log('Guardando datos en la base de datos:', ejerciciosState);
+    console.log("Guardando datos en la base de datos:", ejerciciosState[0]);
 
-    Alert.alert('Éxito', 'Entrenamiento guardado en la base de datos.');
-    navigation.goBack(); // Navegar fuera de la pantalla tras guardar
+    // Mostrar el mensaje de éxito y retrasar la navegación
+    Alert.alert("Éxito", "Entrenamiento guardado en la base de datos.", [
+      {
+        text: "OK",
+        onPress: () => {
+          navigation.navigate("Registro", {
+            initialSelectedEntreno: ejerciciosState[0]?.nombre_entreno,
+          }); // Navegar tras cerrar el Alert
+        },
+      },
+    ]);
   };
-
-
 
   return (
     <View style={styles.container}>
@@ -80,13 +107,15 @@ export default function EntrenoActivoScreen({ route }) {
           data={ejerciciosState}
           keyExtractor={(item) => item.id_ejercicio.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleSelectExercise(item.id_ejercicio)}>
+            <TouchableOpacity
+              onPress={() => handleSelectExercise(item.id_ejercicio)}
+            >
               <View style={styles.exerciseItem}>
                 <Text style={styles.exerciseName}>
                   {item.nombre_ejercicio} ({item.series}x{item.repeticiones})
                 </Text>
                 <Text style={styles.statusIcon}>
-                  {item.completado ? '✅' : '❌'}
+                  {item.completado ? "✅" : "❌"}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -97,7 +126,7 @@ export default function EntrenoActivoScreen({ route }) {
         {selectedExerciseId && (
           <View style={styles.exerciseDetail}>
             <Text style={styles.detailTitle}>
-              Ejercicio:{' '}
+              Ejercicio:{" "}
               {
                 ejerciciosState.find(
                   (exercise) => exercise.id_ejercicio === selectedExerciseId
@@ -112,7 +141,9 @@ export default function EntrenoActivoScreen({ route }) {
                 );
 
                 if (!selectedExercise) {
-                  return <Text>Ejercicio no encontrado o no seleccionado.</Text>;
+                  return (
+                    <Text>Ejercicio no encontrado o no seleccionado.</Text>
+                  );
                 }
 
                 return selectedExercise.registros.map((registro, index) => (
@@ -124,7 +155,12 @@ export default function EntrenoActivoScreen({ route }) {
                       keyboardType="numeric"
                       value={registro.repeticiones}
                       onChangeText={(value) =>
-                        handleChangeSerie(selectedExercise.id_ejercicio, index, 'repeticiones', value)
+                        handleChangeSerie(
+                          selectedExercise.id_ejercicio,
+                          index,
+                          "repeticiones",
+                          value
+                        )
                       }
                     />
                     <TextInput
@@ -133,7 +169,12 @@ export default function EntrenoActivoScreen({ route }) {
                       keyboardType="numeric"
                       value={registro.peso}
                       onChangeText={(value) =>
-                        handleChangeSerie(selectedExercise.id_ejercicio, index, 'peso', value)
+                        handleChangeSerie(
+                          selectedExercise.id_ejercicio,
+                          index,
+                          "peso",
+                          value
+                        )
                       }
                     />
                   </View>
@@ -142,10 +183,14 @@ export default function EntrenoActivoScreen({ route }) {
             </ScrollView>
           </View>
         )}
-        <View style={styles.buttonContainer}>
+      </View>
+              <View style={styles.buttonContainer}>
+          <Button
+            title="Ir al temporizador"
+            onPress={() => navigation.navigate("Timer")}
+          />
           <Button title="Guardar Entreno" onPress={handleSaveExercise} />
         </View>
-      </View>
     </View>
   );
 }
@@ -153,30 +198,32 @@ export default function EntrenoActivoScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   topContainer: {
     flexShrink: 0,
     flexGrow: 0,
-    flexBasis: 'auto',
+    flexBasis: "auto",
     marginBottom: 1,
   },
   bottomContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
     paddingTop: 1,
+    marginBottom: 80,
+    margin: 10
   },
   exerciseItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 8,
     borderBottomWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
   },
   exerciseName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   statusIcon: {
     fontSize: 20,
@@ -186,7 +233,7 @@ const styles = StyleSheet.create({
   },
   detailTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
   },
   serieContainer: {
@@ -195,16 +242,24 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     padding: 8,
     marginVertical: 4,
     borderRadius: 4,
   },
   buttonContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 10,
     left: 10,
     right: 10,
+    flexDirection: "column", // Cambia a 'column' si deseas que los botones estén en una columna
+    justifyContent: "space-between", // Espaciado entre botones
+    alignItems: "center", // Alineación centrada de los botones
+    paddingVertical: 5, // Añadir algo de padding horizontal para no pegar los botones a los bordes
+    height: 100,
+    borderTopWidth: 3,  // Aquí defines el grosor del borde superior
+    borderTopColor: "grey",  // Aquí defines el color del borde superior, puedes cambiarlo por el color que prefieras
+    borderTopStyle: "solid",  // Establece el estilo del borde, puede ser 'solid', 'dashed', 'dotted', etc.
   },
   seriesScroll: {
     flex: 1,

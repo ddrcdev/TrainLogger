@@ -9,6 +9,7 @@ import EntrenosScreen from './screens/Entrenos/EntrenosScreen';
 import AddEntrenoScreen from './screens/Entrenos/AddEntrenoScreen';
 import EjerciciosScreen from './screens/EjerciciosScreen';
 import TestScreen from './screens/Test';
+import TimerScreen from './screens/Registros/TimerScreen';
 import { setupDatabase } from './database/database';
 // Añadir una clave para cada screen asociada a 
 // un objeto importado desde la carpeta ./screens/
@@ -21,13 +22,14 @@ const RootStack = createNativeStackNavigator({
     Ejercicios: EjerciciosScreen,
     Registro: RegistrarEntrenoScreen,
     EntrenoActivo: EntrenoActivoScreen,
-    Test: TestScreen
+    Test: TestScreen,
+    Timer: TimerScreen
   },
 });
 
 // Crea el objeto para navegación, estático
 const Navigation = createStaticNavigation(RootStack);
-console.log("Debuggin")
+
 export default function App() {
   useEffect(() => {
     // Llamamos a setupDatabase cuando la app se inicializa

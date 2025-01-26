@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, FlatList } from 'react-native';
+import { View, Text, Button, StyleSheet, FlatList, Alert } from 'react-native';
 import {Picker} from '@react-native-picker/picker'
 import { getEntrenos, getRegistrosByNombre, getEntrenosData, getEjercicios } from '../../database/database'; // Asumiendo que estas funciones ya existen en tu base de datos
 import {useNavigation} from '@react-navigation/native';
 
-export default function RegistrarEntrenoScreen({}) {
+export default function RegistrarEntrenoScreen({ route }) {
+  const { initialSelectedEntreno = null } = route.params || {};
 
   const navigation = useNavigation();
   const [entrenos, setEntrenos] = useState([]); // Lista de entrenos disponibles
-  const [selectedEntreno, setSelectedEntreno] = useState(null); // Entreno seleccionado
-  const [registros, setRegistros] = useState([]);
-  const [ejerciciosEntreno, setEjerciciosEntreno] = useState([]);
+  const [selectedEntreno, setSelectedEntreno] = useState(initialSelectedEntreno); // Entreno seleccionado
+  const [registros, setRegistros] = useState([]); 
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Aquí puedes manejar lo que quieras antes de que la pantalla sea removida
+      // Por ejemplo, mostrar una alerta de confirmación:
+      e.preventDefault();
+      console.log("Salir a Home")
+      navigation.navigate('Home')
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+  
   useEffect(() => {
     // Cargar los entrenos desde la base de datos al montar la pantalla
     const fetchEntrenos = async () => {
@@ -27,10 +39,10 @@ export default function RegistrarEntrenoScreen({}) {
       if (selectedEntreno) {
         const registrosData = await getRegistrosByNombre(selectedEntreno);
         const ejercicios = await getEjercicios(); 
-        console.log("Ejerc",ejercicios)
 
+        const registrosOrdenados = registrosData.sort((a, b) => b.id_registro - a.id_registro);
         // Añadir el nombre_ejercicio a cada registro iterando en ejercicios
-        const registrosUpdated = registrosData.map((registro) => {
+        const registrosUpdated = registrosOrdenados.map((registro) => {
           // Buscar el ejercicio correspondiente en el array de ejercicios
           const ejercicioEncontrado = ejercicios.find(ejercicio => ejercicio.id_ejercicio === registro.id_ejercicio);
           
@@ -62,7 +74,6 @@ export default function RegistrarEntrenoScreen({}) {
         const ejerciciosEntreno = await getEntrenosData(selectedEntreno); // Obtener los datos de los entrenos
         
         if (ejerciciosEntreno && ejerciciosEntreno.length > 0) {
-          setEjerciciosEntreno(ejerciciosEntreno);
           navigation.navigate('EntrenoActivo', {ejerciciosEntreno})
         } else {
           console.log('No se han encontrado ejercicios para este entreno.');
@@ -73,7 +84,6 @@ export default function RegistrarEntrenoScreen({}) {
       console.error('Error al obtener los datos del entreno:', error);
     }
   };
-
 
 
   return (
